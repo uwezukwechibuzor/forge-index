@@ -1,0 +1,22 @@
+[package]
+name = "forge-index"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+forge-index-core = { path = "../forge-index-core" }
+forge-index-config = { path = "../forge-index-config" }
+forge-index-rpc = { path = "../forge-index-rpc" }
+forge-index-sync = { path = "../forge-index-sync" }
+forge-index-db = { path = "../forge-index-db" }
+forge-index-api = { path = "../forge-index-api" }
+forge-index-telemetry = { path = "../forge-index-telemetry" }
+tokio = { workspace = true }
+tracing = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+sqlx = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }

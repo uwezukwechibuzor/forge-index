@@ -2049,6 +2049,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "00b0228411908ca8685dba7fc2cdd70ec9990a6e753e89b6ac91a84c40fbaf4b"
 
 [[package]]
+name = "forge-index"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "forge-index-api",
+ "forge-index-config",
+ "forge-index-core",
+ "forge-index-db",
+ "forge-index-rpc",
+ "forge-index-sync",
+ "forge-index-telemetry",
+ "serde_json",
+ "sqlx",
+ "thiserror 1.0.69",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "forge-index-api"
 version = "0.1.0"
 dependencies = [

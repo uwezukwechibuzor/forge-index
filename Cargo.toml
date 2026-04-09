@@ -13,6 +13,7 @@ members = [
     "crates/forge-index-api",
     "crates/forge-index-telemetry",
     "crates/forge-index-server",
+    "crates/forge-index",
     "crates/forge-index-cli",
 ]
 
