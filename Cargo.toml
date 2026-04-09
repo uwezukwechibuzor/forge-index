@@ -17,6 +17,7 @@ members = [
     "crates/forge-index-cli",
     "examples/erc20",
     "examples/uniswap-v3",
+    "examples/nft",
 ]
 
 [workspace.dependencies]

@@ -3426,6 +3426,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "nft-indexer"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "dotenvy",
+ "forge-index",
+ "forge-index-config",
+ "forge-index-core",
+ "forge-index-db",
+ "indexmap 2.13.1",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "notify"
 version = "6.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
