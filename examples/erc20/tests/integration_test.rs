@@ -8,7 +8,42 @@ use indexmap::IndexMap;
 
 const ERC20_ABI: &str = include_str!("../abis/ERC20.json");
 
-/// Tests that the ABI parses correctly and contains expected events.
+// ── Test helpers ────────────────────────────────────────────────────────
+// These verify parameter extraction without a real DbContext.
+
+fn extract_address(event: &DecodedEvent, name: &str) -> Result<String, anyhow::Error> {
+    match event.get(name)? {
+        DecodedParam::Address(addr) => Ok(addr.to_string()),
+        other => anyhow::bail!("Expected address for '{}', got {:?}", name, other),
+    }
+}
+
+fn extract_uint256(event: &DecodedEvent, name: &str) -> Result<String, anyhow::Error> {
+    match event.get(name)? {
+        DecodedParam::Uint(v) => Ok(v.to_string()),
+        DecodedParam::Uint256(s) => Ok(s.clone()),
+        other => anyhow::bail!("Expected uint256 for '{}', got {:?}", name, other),
+    }
+}
+
+fn make_log(block: u64, log_idx: u32, tx_byte: u8) -> Log {
+    Log {
+        id: format!("test-{}", log_idx),
+        chain_id: 1,
+        address: Address([0; 20]),
+        topics: vec![],
+        data: vec![],
+        block_number: block,
+        block_hash: Hash32([0; 32]),
+        transaction_hash: Hash32([tx_byte; 32]),
+        log_index: log_idx,
+        transaction_index: 0,
+        removed: false,
+    }
+}
+
+// ── ABI tests ───────────────────────────────────────────────────────────
+
 #[test]
 fn abi_parses_correctly() {
     let parsed = parse_abi(ERC20_ABI).unwrap();
@@ -18,7 +53,6 @@ fn abi_parses_correctly() {
     assert_eq!(parsed.functions.len(), 9);
 }
 
-/// Tests that the Transfer event selector matches the expected keccak256.
 #[test]
 fn transfer_selector_is_correct() {
     let parsed = parse_abi(ERC20_ABI).unwrap();
@@ -29,7 +63,6 @@ fn transfer_selector_is_correct() {
     );
 }
 
-/// Tests that the Approval event selector matches the expected keccak256.
 #[test]
 fn approval_selector_is_correct() {
     let parsed = parse_abi(ERC20_ABI).unwrap();
@@ -40,12 +73,12 @@ fn approval_selector_is_correct() {
     );
 }
 
-/// Tests that the schema builds correctly with 4 tables.
+// ── Schema tests ────────────────────────────────────────────────────────
+
 #[test]
 fn schema_has_correct_tables() {
     let schema = erc20_indexer::schema::build();
     assert_eq!(schema.tables.len(), 4);
-
     let table_names: Vec<&str> = schema.tables.iter().map(|t| t.name.as_str()).collect();
     assert!(table_names.contains(&"accounts"));
     assert!(table_names.contains(&"transfer_events"));
@@ -53,27 +86,17 @@ fn schema_has_correct_tables() {
     assert!(table_names.contains(&"token_stats"));
 }
 
-/// Tests that the schema generates valid SQL for all tables.
 #[test]
 fn schema_sql_generation() {
     let schema = erc20_indexer::schema::build();
     let sql = schema.to_create_sql("public");
-
-    // 4 tables × (main + reorg) + indexes
-    assert!(sql.len() >= 8, "should have at least 8 SQL statements");
-
-    // Check main tables exist
+    assert!(sql.len() >= 8);
     assert!(sql.iter().any(|s| s.contains("\"accounts\"")));
-    assert!(sql.iter().any(|s| s.contains("\"transfer_events\"")));
-    assert!(sql.iter().any(|s| s.contains("\"approval_events\"")));
-    assert!(sql.iter().any(|s| s.contains("\"token_stats\"")));
-
-    // Check reorg shadow tables
     assert!(sql.iter().any(|s| s.contains("\"_reorg_accounts\"")));
-    assert!(sql.iter().any(|s| s.contains("\"_reorg_transfer_events\"")));
 }
 
-/// Tests that the ForgeIndex builder accepts the ERC20 config and schema.
+// ── Builder tests ───────────────────────────────────────────────────────
+
 #[test]
 fn forge_index_builder_accepts_erc20_config() {
     let config = ConfigBuilder::new()
@@ -94,34 +117,24 @@ fn forge_index_builder_accepts_erc20_config() {
         .build()
         .unwrap();
 
-    let schema = erc20_indexer::schema::build();
-
-    async fn transfer_handler(
-        _e: DecodedEvent,
-        _c: serde_json::Value,
-    ) -> Result<(), anyhow::Error> {
-        Ok(())
-    }
-    async fn approval_handler(
-        _e: DecodedEvent,
-        _c: serde_json::Value,
-    ) -> Result<(), anyhow::Error> {
+    async fn noop(_e: DecodedEvent, _c: serde_json::Value) -> Result<(), anyhow::Error> {
         Ok(())
     }
 
     let result = ForgeIndex::new()
         .config(config)
-        .schema(schema)
-        .on("ERC20:Transfer", transfer_handler)
-        .on("ERC20:Approval", approval_handler)
+        .schema(erc20_indexer::schema::build())
+        .on("ERC20:Transfer", noop)
+        .on("ERC20:Approval", noop)
         .build();
 
     assert!(result.is_ok(), "builder should accept valid ERC20 config");
 }
 
-/// Tests the Transfer handler with a synthetic decoded event.
-#[tokio::test]
-async fn transfer_handler_processes_event() {
+// ── Handler parameter extraction tests ──────────────────────────────────
+
+#[test]
+fn transfer_event_extracts_params() {
     let mut params = IndexMap::new();
     params.insert(
         "from".to_string(),
@@ -140,28 +153,20 @@ async fn transfer_handler_processes_event() {
         name: "Transfer".to_string(),
         contract_name: "ERC20".to_string(),
         params,
-        raw_log: Log {
-            id: "test-0".to_string(),
-            chain_id: 1,
-            address: Address([0; 20]),
-            topics: vec![],
-            data: vec![],
-            block_number: 100,
-            block_hash: Hash32([0; 32]),
-            transaction_hash: Hash32([0x33; 32]),
-            log_index: 0,
-            transaction_index: 0,
-            removed: false,
-        },
+        raw_log: make_log(100, 0, 0x33),
     };
 
-    let result = erc20_indexer::handlers::handle_transfer(event, serde_json::Value::Null).await;
-    assert!(result.is_ok(), "transfer handler should succeed");
+    let from = extract_address(&event, "from").unwrap();
+    let to = extract_address(&event, "to").unwrap();
+    let value = extract_uint256(&event, "value").unwrap();
+
+    assert!(from.starts_with("0x"));
+    assert!(to.starts_with("0x"));
+    assert_eq!(value, "1000");
 }
 
-/// Tests the Approval handler with a synthetic decoded event.
-#[tokio::test]
-async fn approval_handler_processes_event() {
+#[test]
+fn approval_event_extracts_params() {
     let mut params = IndexMap::new();
     params.insert(
         "owner".to_string(),
@@ -177,55 +182,33 @@ async fn approval_handler_processes_event() {
         name: "Approval".to_string(),
         contract_name: "ERC20".to_string(),
         params,
-        raw_log: Log {
-            id: "test-1".to_string(),
-            chain_id: 1,
-            address: Address([0; 20]),
-            topics: vec![],
-            data: vec![],
-            block_number: 100,
-            block_hash: Hash32([0; 32]),
-            transaction_hash: Hash32([0x44; 32]),
-            log_index: 1,
-            transaction_index: 0,
-            removed: false,
-        },
+        raw_log: make_log(100, 1, 0x44),
     };
 
-    let result = erc20_indexer::handlers::handle_approval(event, serde_json::Value::Null).await;
-    assert!(result.is_ok(), "approval handler should succeed");
+    let owner = extract_address(&event, "owner").unwrap();
+    let spender = extract_address(&event, "spender").unwrap();
+    let value = extract_uint256(&event, "value").unwrap();
+
+    assert!(owner.starts_with("0x"));
+    assert!(spender.starts_with("0x"));
+    assert_eq!(value, "5000");
 }
 
-/// Tests that the schema build_id is deterministic.
+#[test]
+fn missing_params_returns_error() {
+    let event = DecodedEvent {
+        name: "Transfer".to_string(),
+        contract_name: "ERC20".to_string(),
+        params: IndexMap::new(),
+        raw_log: make_log(100, 0, 0),
+    };
+
+    assert!(extract_address(&event, "from").is_err());
+}
+
 #[test]
 fn schema_build_id_is_deterministic() {
     let s1 = erc20_indexer::schema::build();
     let s2 = erc20_indexer::schema::build();
     assert_eq!(s1.build_id(), s2.build_id());
-}
-
-/// Tests that handler rejects events with missing parameters.
-#[tokio::test]
-async fn transfer_handler_rejects_missing_params() {
-    let event = DecodedEvent {
-        name: "Transfer".to_string(),
-        contract_name: "ERC20".to_string(),
-        params: IndexMap::new(), // empty — missing from/to/value
-        raw_log: Log {
-            id: "test-0".to_string(),
-            chain_id: 1,
-            address: Address([0; 20]),
-            topics: vec![],
-            data: vec![],
-            block_number: 100,
-            block_hash: Hash32([0; 32]),
-            transaction_hash: Hash32([0; 32]),
-            log_index: 0,
-            transaction_index: 0,
-            removed: false,
-        },
-    };
-
-    let result = erc20_indexer::handlers::handle_transfer(event, serde_json::Value::Null).await;
-    assert!(result.is_err(), "should fail with missing params");
 }

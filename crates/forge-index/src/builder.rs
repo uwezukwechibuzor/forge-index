@@ -1,11 +1,13 @@
 //! ForgeIndex builder — the main entry point for users.
 
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use forge_index_config::{Config, Schema};
 use forge_index_core::abi::parser::parse_abi;
 use forge_index_core::error::ForgeError;
 use forge_index_core::registry::{EventRegistry, HandlerFn, SetupHandlerFn};
+use forge_index_db::handler::{EventHandlerFn, SetupEventHandlerFn};
 use forge_index_telemetry::{compute_build_id, BuildInput};
 
 use crate::runner::ForgeIndexRunner;
@@ -26,7 +28,13 @@ use crate::runner::ForgeIndexRunner;
 pub struct ForgeIndex {
     config: Option<Config>,
     schema: Option<Schema>,
-    registry: EventRegistry,
+    /// Legacy registry (handlers take serde_json::Value context).
+    legacy_registry: EventRegistry,
+    /// Production registry (handlers take DbContext).
+    db_handlers: HashMap<String, Arc<dyn EventHandlerFn>>,
+    db_setup_handlers: HashMap<String, Arc<dyn SetupEventHandlerFn>>,
+    /// Track all registered keys for validation.
+    all_handler_keys: Vec<String>,
 }
 
 impl ForgeIndex {
@@ -35,7 +43,10 @@ impl ForgeIndex {
         Self {
             config: None,
             schema: None,
-            registry: EventRegistry::new(),
+            legacy_registry: EventRegistry::new(),
+            db_handlers: HashMap::new(),
+            db_setup_handlers: HashMap::new(),
+            all_handler_keys: Vec::new(),
         }
     }
 
@@ -51,15 +62,31 @@ impl ForgeIndex {
         self
     }
 
-    /// Registers an event handler for a `"ContractName:EventName"` key.
+    /// Registers an event handler (legacy: takes `serde_json::Value` context).
     pub fn on(mut self, event_key: &str, handler: impl HandlerFn) -> Self {
-        self.registry.register(event_key, handler);
+        self.legacy_registry.register(event_key, handler);
+        self.all_handler_keys.push(event_key.to_string());
         self
     }
 
-    /// Registers a setup handler that runs once before indexing for a contract.
+    /// Registers an event handler (production: takes `DbContext`).
+    pub fn on_db(mut self, event_key: &str, handler: impl EventHandlerFn) -> Self {
+        self.db_handlers
+            .insert(event_key.to_string(), Arc::new(handler));
+        self.all_handler_keys.push(event_key.to_string());
+        self
+    }
+
+    /// Registers a setup handler (legacy: takes `serde_json::Value`).
     pub fn setup(mut self, contract: &str, handler: impl SetupHandlerFn) -> Self {
-        self.registry.register_setup(contract, handler);
+        self.legacy_registry.register_setup(contract, handler);
+        self
+    }
+
+    /// Registers a setup handler (production: takes `DbContext`).
+    pub fn setup_db(mut self, contract: &str, handler: impl SetupEventHandlerFn) -> Self {
+        self.db_setup_handlers
+            .insert(contract.to_string(), Arc::new(handler));
         self
     }
 
@@ -84,8 +111,8 @@ impl ForgeIndex {
             }
         }
 
-        for handler_key in self.registry.all_keys() {
-            if !known_events.contains(&handler_key) {
+        for handler_key in &self.all_handler_keys {
+            if !known_events.contains(handler_key) {
                 return Err(ForgeError::Config(format!(
                     "Handler '{}' references unknown contract or event. \
                      Ensure the contract is in the config and the event is in its ABI.",
@@ -96,7 +123,9 @@ impl ForgeIndex {
 
         // Warn for events in the ABI with no registered handler
         for event_key in &known_events {
-            if !self.registry.has_handler(event_key) {
+            if !self.legacy_registry.has_handler(event_key)
+                && !self.db_handlers.contains_key(event_key)
+            {
                 tracing::warn!(
                     event_key = event_key.as_str(),
                     "Event '{}' defined in ABI but no handler registered — events will be skipped",
@@ -106,17 +135,17 @@ impl ForgeIndex {
         }
 
         // Compute build ID
-        let handler_keys = self.registry.all_keys();
         let build_id = compute_build_id(BuildInput {
             config: &config,
             schema: &schema,
-            handler_keys: &handler_keys,
+            handler_keys: &self.all_handler_keys,
         });
 
         Ok(ForgeIndexRunner::new(
             config,
             schema,
-            Arc::new(self.registry),
+            Arc::new(self.legacy_registry),
+            self.db_handlers,
             build_id,
         ))
     }

@@ -4,8 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+forge-index-core = { path = "../forge-index-core" }
 forge-index-config = { path = "../forge-index-config" }
 forge-index-telemetry = { path = "../forge-index-telemetry" }
+anyhow = { workspace = true }
 sqlx = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }

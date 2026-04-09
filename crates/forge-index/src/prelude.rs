@@ -17,10 +17,14 @@ pub use forge_index_config::{
     SchemaBuilder, TableBuilder,
 };
 
-// Database context
+// Database context + row types
 pub use forge_index_db::context::DbContext;
+pub use forge_index_db::row::{ColumnValue, Row};
 
-// Registry
+// Handler traits (production — takes DbContext)
+pub use forge_index_db::handler::{EventHandlerFn, SetupEventHandlerFn};
+
+// Legacy handler traits (takes serde_json::Value — still used internally)
 pub use forge_index_core::registry::{EventRegistry, HandlerFn, SetupHandlerFn};
 
 // Builder

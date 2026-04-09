@@ -28,14 +28,11 @@ async fn main() -> anyhow::Result<()> {
         "postgres://postgres:postgres@localhost:5432/erc20_indexer".to_string()
     });
 
-    // Alchemy free tier limits eth_getLogs to 10-block ranges.
-    // Set MAX_BLOCK_RANGE=10 in .env for free tier, or 2000+ for paid.
     let max_block_range: u64 = std::env::var("MAX_BLOCK_RANGE")
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(2000);
 
-    // Alchemy free tier: ~330 compute units/s ≈ 5 requests/s
     let max_rps: u32 = std::env::var("MAX_RPC_REQUESTS_PER_SECOND")
         .ok()
         .and_then(|v| v.parse().ok())
@@ -54,7 +51,10 @@ async fn main() -> anyhow::Result<()> {
             c.address = forge_index_config::AddressConfig::Single(Address::from(
                 "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC
             ));
-            c.start_block = 6_082_465;
+            c.start_block = std::env::var("START_BLOCK")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(6_082_465);
         })
         .schema(schema::build())
         .database(DatabaseConfig::postgres(database_url))
@@ -63,8 +63,8 @@ async fn main() -> anyhow::Result<()> {
     ForgeIndex::new()
         .config(config)
         .schema(schema::build())
-        .on("ERC20:Transfer", handle_transfer)
-        .on("ERC20:Approval", handle_approval)
+        .on_db("ERC20:Transfer", handle_transfer)
+        .on_db("ERC20:Approval", handle_approval)
         .run()
         .await?;
 

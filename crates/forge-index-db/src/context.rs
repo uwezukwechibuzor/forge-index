@@ -89,6 +89,12 @@ impl<'a> InsertBuilder<'a> {
         Ok(self)
     }
 
+    /// Sets the row values from a pre-built Row.
+    pub fn row(mut self, row: Row) -> Self {
+        self.row = row;
+        self
+    }
+
     /// Executes the INSERT by adding the row to the write buffer.
     pub fn execute(self) -> Result<(), DbError> {
         self.ctx.buffer.insert(&self.table, self.row)

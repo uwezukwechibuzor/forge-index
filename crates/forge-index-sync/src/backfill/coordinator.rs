@@ -6,6 +6,7 @@ use std::sync::Arc;
 use forge_index_config::ContractConfig;
 use forge_index_core::abi::decoder::DecodedEvent;
 use forge_index_core::registry::EventRegistry;
+use forge_index_db::handler::EventHandlerFn;
 use forge_index_db::{DbContext, WriteBuffer};
 
 use crate::backfill::planner::{self, BackfillPlan};
@@ -18,8 +19,10 @@ use crate::factory::FactoryAddressTracker;
 pub struct BackfillCoordinator {
     /// Per-(chain_id, contract_name) workers.
     workers: HashMap<(u64, String), BackfillWorker>,
-    /// Event handler registry.
+    /// Legacy event handler registry (serde_json::Value context).
     registry: Arc<EventRegistry>,
+    /// Production event handlers (DbContext).
+    db_handlers: HashMap<String, Arc<dyn EventHandlerFn>>,
     /// Write buffer for DB operations.
     write_buffer: Arc<WriteBuffer>,
     /// Cache store for checkpoint operations.
@@ -45,6 +48,7 @@ impl BackfillCoordinator {
     pub fn new(
         workers: HashMap<(u64, String), BackfillWorker>,
         registry: Arc<EventRegistry>,
+        db_handlers: HashMap<String, Arc<dyn EventHandlerFn>>,
         write_buffer: Arc<WriteBuffer>,
         cache_store: Arc<forge_index_rpc::RpcCacheStore>,
         progress: Arc<BackfillProgress>,
@@ -57,6 +61,7 @@ impl BackfillCoordinator {
         Self {
             workers,
             registry,
+            db_handlers,
             write_buffer,
             cache_store,
             progress,
@@ -96,13 +101,7 @@ impl BackfillCoordinator {
                 .copied()
                 .unwrap_or(planner::DEFAULT_CHUNK_SIZE);
 
-            let plan = planner::plan(
-                contract,
-                chain_id,
-                current_block,
-                checkpoint,
-                chunk_size,
-            );
+            let plan = planner::plan(contract, chain_id, current_block, checkpoint, chunk_size);
             plans.push(plan);
         }
 
@@ -113,11 +112,10 @@ impl BackfillCoordinator {
         // Find the max number of ranges across all plans
         let max_ranges = plans.iter().map(|p| p.ranges.len()).max().unwrap_or(0);
 
-        // Process ranges sequentially (each range may be fetched in parallel across contracts)
+        // Process ranges sequentially
         for range_idx in 0..max_ranges {
             let mut all_events: Vec<DecodedEvent> = Vec::new();
 
-            // Fetch events from all contracts for this range index
             for plan in &plans {
                 if range_idx >= plan.ranges.len() {
                     continue;
@@ -149,7 +147,7 @@ impl BackfillCoordinator {
                 block_cmp.then(a.raw_log.log_index.cmp(&b.raw_log.log_index))
             });
 
-            // Process events through handlers and record telemetry
+            // Process events through handlers
             let events_count = all_events.len() as u64;
             for event in &all_events {
                 forge_index_telemetry::record_event_indexed(
@@ -157,16 +155,43 @@ impl BackfillCoordinator {
                     &event.contract_name,
                     &event.name,
                 );
+
                 let handler_key = format!("{}:{}", event.contract_name, event.name);
-                if let Some(handler) = self.registry.get(&handler_key) {
-                    let _ctx = DbContext::new(
+
+                // Try db_handlers first (production: DbContext), then legacy registry
+                if let Some(handler) = self.db_handlers.get(&handler_key) {
+                    let ctx = DbContext::new(
                         self.write_buffer.clone(),
                         self.db_pool.clone(),
                         self.pg_schema.clone(),
                     );
-                    let ctx_json = serde_json::Value::Null; // Placeholder
 
-                    // Catch panics from handler
+                    let event_clone = event.clone();
+                    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                        handler.call(event_clone, ctx)
+                    }));
+
+                    match result {
+                        Ok(fut) => {
+                            if let Err(e) = fut.await {
+                                tracing::error!(
+                                    handler = %handler_key,
+                                    error = %e,
+                                    "Handler returned error (non-panic)"
+                                );
+                            }
+                        }
+                        Err(panic_info) => {
+                            let msg = panic_message(panic_info);
+                            return Err(SyncError::HandlerPanic {
+                                handler: handler_key,
+                                message: msg,
+                            });
+                        }
+                    }
+                } else if let Some(handler) = self.registry.get(&handler_key) {
+                    // Legacy handler (serde_json::Value context)
+                    let ctx_json = serde_json::Value::Null;
                     let event_clone = event.clone();
                     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                         handler.call(event_clone, ctx_json)
@@ -180,17 +205,10 @@ impl BackfillCoordinator {
                                     error = %e,
                                     "Handler returned error (non-panic)"
                                 );
-                                // Continue processing — don't stop backfill
                             }
                         }
                         Err(panic_info) => {
-                            let msg = if let Some(s) = panic_info.downcast_ref::<&str>() {
-                                s.to_string()
-                            } else if let Some(s) = panic_info.downcast_ref::<String>() {
-                                s.clone()
-                            } else {
-                                "unknown panic".to_string()
-                            };
+                            let msg = panic_message(panic_info);
                             return Err(SyncError::HandlerPanic {
                                 handler: handler_key,
                                 message: msg,
@@ -205,13 +223,6 @@ impl BackfillCoordinator {
                 .flush_all()
                 .await
                 .map_err(SyncError::Database)?;
-
-            // Determine the max block processed in this range
-            let _max_block = plans
-                .iter()
-                .filter_map(|p| p.ranges.get(range_idx).map(|r| r.to))
-                .max()
-                .unwrap_or(0);
 
             let blocks_in_range = plans
                 .iter()
@@ -233,12 +244,21 @@ impl BackfillCoordinator {
             self.progress
                 .record(chain_id, blocks_in_range, events_count);
 
-            // Record telemetry for processed blocks
             for _ in 0..blocks_in_range {
                 forge_index_telemetry::record_block_processed(chain_id);
             }
         }
 
         Ok(())
+    }
+}
+
+fn panic_message(panic_info: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(s) = panic_info.downcast_ref::<&str>() {
+        s.to_string()
+    } else if let Some(s) = panic_info.downcast_ref::<String>() {
+        s.clone()
+    } else {
+        "unknown panic".to_string()
     }
 }

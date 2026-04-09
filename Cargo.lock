@@ -2012,6 +2012,7 @@ dependencies = [
  "forge-index-core",
  "forge-index-db",
  "indexmap 2.13.1",
+ "serde",
  "serde_json",
  "tokio",
  "tracing",
@@ -2263,8 +2264,10 @@ dependencies = [
 name = "forge-index-db"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "dashmap",
  "forge-index-config",
+ "forge-index-core",
  "forge-index-telemetry",
  "hex",
  "indexmap 2.13.1",

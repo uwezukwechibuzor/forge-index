@@ -9,6 +9,7 @@ use forge_index_core::abi::parser::parse_abi;
 use forge_index_core::abi::LogDecoder;
 use forge_index_core::error::ForgeError;
 use forge_index_core::registry::EventRegistry;
+use forge_index_db::handler::EventHandlerFn;
 use forge_index_db::{DatabaseManager, ReorgStore, WriteBuffer};
 use forge_index_rpc::{build_from_config, RpcCacheStore};
 use forge_index_sync::backfill::coordinator::BackfillCoordinator;
@@ -24,6 +25,8 @@ pub struct ForgeIndexRunner {
     config: Config,
     schema: Schema,
     registry: Arc<EventRegistry>,
+    #[allow(dead_code)]
+    db_handlers: HashMap<String, Arc<dyn EventHandlerFn>>,
     build_id: String,
 }
 
@@ -33,12 +36,14 @@ impl ForgeIndexRunner {
         config: Config,
         schema: Schema,
         registry: Arc<EventRegistry>,
+        db_handlers: HashMap<String, Arc<dyn EventHandlerFn>>,
         build_id: String,
     ) -> Self {
         Self {
             config,
             schema,
             registry,
+            db_handlers,
             build_id,
         }
     }
@@ -232,6 +237,7 @@ impl ForgeIndexRunner {
         let coordinator = BackfillCoordinator::new(
             workers,
             self.registry.clone(),
+            self.db_handlers,
             write_buffer.clone(),
             cache_store.clone(),
             progress.clone(),

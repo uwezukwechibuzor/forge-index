@@ -7,6 +7,7 @@
 pub mod buffer;
 pub mod context;
 pub mod error;
+pub mod handler;
 pub mod manager;
 pub mod query;
 pub mod reorg;
@@ -21,4 +22,5 @@ pub use error::DbError;
 pub use manager::{BuildIdStatus, DatabaseManager};
 pub use query::{Dir, QueryBuilder};
 pub use reorg::{Operation, ReorgStore};
+pub use handler::{EventHandlerFn, SetupEventHandlerFn};
 pub use row::{ColumnValue, Row};
