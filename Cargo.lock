@@ -1846,6 +1846,21 @@ version = "0.1.0"
 [[package]]
 name = "forge-index-sync"
 version = "0.1.0"
+dependencies = [
+ "dashmap",
+ "forge-index-config",
+ "forge-index-core",
+ "forge-index-db",
+ "forge-index-rpc",
+ "futures",
+ "indexmap 2.13.1",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 1.0.69",
+ "tokio",
+ "tracing",
+]
 
 [[package]]
 name = "form_urlencoded"

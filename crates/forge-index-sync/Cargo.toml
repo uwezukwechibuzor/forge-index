@@ -2,3 +2,21 @@
 name = "forge-index-sync"
 version = "0.1.0"
 edition = "2021"
+
+[dependencies]
+forge-index-core = { path = "../forge-index-core" }
+forge-index-config = { path = "../forge-index-config" }
+forge-index-rpc = { path = "../forge-index-rpc" }
+forge-index-db = { path = "../forge-index-db" }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+futures = { workspace = true }
+dashmap = { workspace = true }
+indexmap = { workspace = true }
+sqlx = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }
