@@ -1778,6 +1778,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "forge-index-db"
+version = "0.1.0"
+dependencies = [
+ "dashmap",
+ "forge-index-config",
+ "hex",
+ "indexmap 2.13.1",
+ "serde",
+ "serde_json",
+ "sha2",
+ "sqlx",
+ "testcontainers",
+ "testcontainers-modules",
+ "thiserror 1.0.69",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "forge-index-decode"
 version = "0.1.0"
 
