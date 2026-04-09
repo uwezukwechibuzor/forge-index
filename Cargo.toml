@@ -10,6 +10,7 @@ members = [
     "crates/forge-index-store",
     "crates/forge-index-handler",
     "crates/forge-index-graphql",
+    "crates/forge-index-api",
     "crates/forge-index-server",
     "crates/forge-index-cli",
 ]
@@ -27,8 +28,8 @@ anyhow = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json", "fmt"] }
 clap = { version = "4", features = ["derive"] }
-metrics = "0.23"
-metrics-exporter = "6"
+metrics = "0.24"
+metrics-exporter-prometheus = "0.18"
 sha2 = "0.10"
 hex = "0.4"
 bytes = "1"
@@ -42,3 +43,5 @@ testcontainers-modules = { version = "0.11", features = ["postgres"] }
 criterion = { version = "0.5", features = ["async_tokio"] }
 dashmap = "6"
 indexmap = { version = "2", features = ["serde"] }
+tower-http = { version = "0.6", features = ["cors", "trace"] }
+http = "1"
