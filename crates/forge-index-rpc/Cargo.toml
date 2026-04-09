@@ -2,3 +2,24 @@
 name = "forge-index-rpc"
 version = "0.1.0"
 edition = "2021"
+
+[dependencies]
+forge-index-core = { path = "../forge-index-core" }
+forge-index-config = { path = "../forge-index-config" }
+alloy = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+futures = { workspace = true }
+tokio-retry = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+dashmap = { workspace = true }
+url = "2"
+
+[dev-dependencies]
+wiremock = { workspace = true }
+tracing-subscriber = { workspace = true }
+tokio = { workspace = true, features = ["test-util"] }
