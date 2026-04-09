@@ -36,7 +36,7 @@ notify = "6"
 toml = "0.8"
 tokio-retry = "0.3"
 wiremock = "0.6"
-testcontainers = "0.20"
-testcontainers-modules = { version = "0.9", features = ["postgres"] }
+testcontainers = "0.23"
+testcontainers-modules = { version = "0.11", features = ["postgres"] }
 criterion = { version = "0.5", features = ["async_tokio"] }
 dashmap = "6"
