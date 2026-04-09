@@ -1562,6 +1562,14 @@ version = "0.1.0"
 [[package]]
 name = "forge-index-config"
 version = "0.1.0"
+dependencies = [
+ "forge-index-core",
+ "hex",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tokio",
+]
 
 [[package]]
 name = "forge-index-core"
