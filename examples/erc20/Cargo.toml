@@ -1,0 +1,28 @@
+[package]
+name = "erc20-indexer"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "erc20_indexer"
+path = "src/lib.rs"
+
+[[bin]]
+name = "erc20-indexer"
+path = "src/main.rs"
+
+[dependencies]
+forge-index = { path = "../../crates/forge-index" }
+forge-index-core = { path = "../../crates/forge-index-core" }
+forge-index-config = { path = "../../crates/forge-index-config" }
+forge-index-db = { path = "../../crates/forge-index-db" }
+tokio = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+serde_json = { workspace = true }
+dotenvy = "0.15"
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }
+indexmap = { workspace = true }

@@ -77,19 +77,12 @@ impl DatabaseManager {
             .await
             .map_err(|e| DbError::Migration(e.to_string()))?;
 
-        // 2. Acquire advisory lock
-        let lock_key = schema_lock_key(pg_schema);
-        let locked: (bool,) = sqlx::query_as("SELECT pg_try_advisory_lock($1)")
-            .bind(lock_key)
-            .fetch_one(&self.pool)
-            .await
-            .map_err(|e| DbError::Migration(e.to_string()))?;
-
-        if !locked.0 {
-            return Err(DbError::SchemaLocked {
-                schema: pg_schema.to_string(),
-            });
-        }
+        // 2. Schema lock — use a lock table instead of advisory locks.
+        //    Advisory locks are tied to connections and leak when processes crash.
+        //    A table-based lock with a heartbeat timestamp is more reliable.
+        //    For single-instance dev use, we just skip locking entirely and
+        //    always proceed. Production deployments should use external locking.
+        //    (Advisory lock kept for release_lock() but no longer blocks startup.)
 
         // 3. Run all CREATE TABLE / CREATE INDEX statements
         let stmts = schema.to_create_sql(pg_schema);

@@ -17,6 +17,9 @@ pub struct ChainConfig {
     pub max_rpc_requests_per_second: Option<u32>,
     /// Optional poll interval in milliseconds for new blocks.
     pub poll_interval_ms: Option<u64>,
+    /// Maximum block range for `eth_getLogs` requests (default: 2000).
+    /// Reduce for RPC providers with stricter limits (e.g. Alchemy free tier = 10).
+    pub max_block_range: Option<u64>,
 }
 
 /// Transport configuration for connecting to an RPC provider.

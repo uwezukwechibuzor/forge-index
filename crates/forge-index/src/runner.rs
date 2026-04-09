@@ -221,6 +221,14 @@ impl ForgeIndexRunner {
         let progress = Arc::new(BackfillProgress::new());
         let factory_tracker = Arc::new(FactoryAddressTracker::new());
 
+        // Build per-chain chunk sizes from config
+        let chain_chunk_sizes: HashMap<u64, u64> = self
+            .config
+            .chains
+            .iter()
+            .filter_map(|c| c.max_block_range.map(|r| (c.chain_id, r)))
+            .collect();
+
         let coordinator = BackfillCoordinator::new(
             workers,
             self.registry.clone(),
@@ -229,6 +237,7 @@ impl ForgeIndexRunner {
             progress.clone(),
             factory_tracker,
             chain_contracts.clone(),
+            chain_chunk_sizes,
             pool.clone(),
             pg_schema.clone(),
         );

@@ -15,6 +15,7 @@ members = [
     "crates/forge-index-server",
     "crates/forge-index",
     "crates/forge-index-cli",
+    "examples/erc20",
 ]
 
 [workspace.dependencies]

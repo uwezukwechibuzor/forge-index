@@ -31,6 +31,8 @@ pub struct BackfillCoordinator {
     factory_tracker: Arc<FactoryAddressTracker>,
     /// Contract configurations grouped by chain_id.
     chain_contracts: HashMap<u64, Vec<ContractConfig>>,
+    /// Per-chain maximum block range for eth_getLogs requests.
+    chain_chunk_sizes: HashMap<u64, u64>,
     /// DB context factory components.
     db_pool: sqlx::PgPool,
     /// Postgres schema name.
@@ -48,6 +50,7 @@ impl BackfillCoordinator {
         progress: Arc<BackfillProgress>,
         factory_tracker: Arc<FactoryAddressTracker>,
         chain_contracts: HashMap<u64, Vec<ContractConfig>>,
+        chain_chunk_sizes: HashMap<u64, u64>,
         db_pool: sqlx::PgPool,
         pg_schema: String,
     ) -> Self {
@@ -59,6 +62,7 @@ impl BackfillCoordinator {
             progress,
             factory_tracker,
             chain_contracts,
+            chain_chunk_sizes,
             db_pool,
             pg_schema,
         }
@@ -86,12 +90,18 @@ impl BackfillCoordinator {
                 .ok()
                 .flatten();
 
+            let chunk_size = self
+                .chain_chunk_sizes
+                .get(&chain_id)
+                .copied()
+                .unwrap_or(planner::DEFAULT_CHUNK_SIZE);
+
             let plan = planner::plan(
                 contract,
                 chain_id,
                 current_block,
                 checkpoint,
-                planner::DEFAULT_CHUNK_SIZE,
+                chunk_size,
             );
             plans.push(plan);
         }

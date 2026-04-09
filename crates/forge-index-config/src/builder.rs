@@ -65,6 +65,7 @@ impl ConfigBuilder {
             rpc_ws: None,
             max_rpc_requests_per_second: None,
             poll_interval_ms: None,
+            max_block_range: None,
         };
         f(&mut chain);
         self.chains.push(chain);
