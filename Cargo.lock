@@ -2110,6 +2110,7 @@ version = "0.1.0"
 dependencies = [
  "dashmap",
  "forge-index-config",
+ "forge-index-telemetry",
  "hex",
  "indexmap 2.13.1",
  "serde",
@@ -2177,6 +2178,7 @@ dependencies = [
  "forge-index-core",
  "forge-index-db",
  "forge-index-rpc",
+ "forge-index-telemetry",
  "futures",
  "indexmap 2.13.1",
  "serde",
@@ -2185,6 +2187,22 @@ dependencies = [
  "thiserror 1.0.69",
  "tokio",
  "tracing",
+]
+
+[[package]]
+name = "forge-index-telemetry"
+version = "0.1.0"
+dependencies = [
+ "forge-index-config",
+ "hex",
+ "metrics",
+ "metrics-exporter-prometheus",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

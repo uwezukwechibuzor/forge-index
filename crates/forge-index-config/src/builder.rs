@@ -104,11 +104,7 @@ impl ConfigBuilder {
     }
 
     /// Adds a block interval configuration via a closure.
-    pub fn block_interval(
-        mut self,
-        name: &str,
-        f: impl FnOnce(&mut BlockIntervalConfig),
-    ) -> Self {
+    pub fn block_interval(mut self, name: &str, f: impl FnOnce(&mut BlockIntervalConfig)) -> Self {
         let mut bi = BlockIntervalConfig {
             name: name.to_string(),
             chain_name: String::new(),
@@ -144,9 +140,7 @@ impl ConfigBuilder {
     /// Returns a [`ForgeError::Config`] if validation fails, containing all
     /// validation error messages joined with semicolons.
     pub fn build(self) -> Result<Config, ForgeError> {
-        let schema = self.schema.unwrap_or(Schema {
-            tables: Vec::new(),
-        });
+        let schema = self.schema.unwrap_or(Schema { tables: Vec::new() });
         let database = self
             .database
             .unwrap_or_else(|| DatabaseConfig::postgres(""));
@@ -315,9 +309,7 @@ mod tests {
             .build();
 
         let factory = crate::FactoryConfig {
-            factory_address: vec![Address::from(
-                "0x1F98431c8aD98523631AE4a59f267346ea31F984",
-            )],
+            factory_address: vec![Address::from("0x1F98431c8aD98523631AE4a59f267346ea31F984")],
             event_signature: "PoolCreated(address,address,uint24,int24,address)".to_string(),
             address_parameter: "pool".to_string(),
             start_block: 12_369_621,

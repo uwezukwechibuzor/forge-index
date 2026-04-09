@@ -8,6 +8,7 @@ forge-index-core = { path = "../forge-index-core" }
 forge-index-config = { path = "../forge-index-config" }
 forge-index-rpc = { path = "../forge-index-rpc" }
 forge-index-db = { path = "../forge-index-db" }
+forge-index-telemetry = { path = "../forge-index-telemetry" }
 tokio = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

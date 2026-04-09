@@ -41,10 +41,7 @@ pub fn validate(config: &Config) -> Vec<String> {
     // Every contract has valid JSON in abi_json
     for contract in &config.contracts {
         if serde_json::from_str::<serde_json::Value>(&contract.abi_json).is_err() {
-            errors.push(format!(
-                "Contract '{}' has invalid ABI JSON",
-                contract.name
-            ));
+            errors.push(format!("Contract '{}' has invalid ABI JSON", contract.name));
         }
     }
 
@@ -82,10 +79,7 @@ pub fn validate(config: &Config) -> Vec<String> {
     for table in &config.schema.tables {
         let pk_count = table.columns.iter().filter(|c| c.primary_key).count();
         if pk_count == 0 {
-            errors.push(format!(
-                "Table '{}' has no primary key column",
-                table.name
-            ));
+            errors.push(format!("Table '{}' has no primary key column", table.name));
         } else if pk_count > 1 {
             errors.push(format!(
                 "Table '{}' has {} primary key columns, expected exactly 1",

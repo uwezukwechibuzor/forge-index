@@ -109,6 +109,9 @@ impl BackfillProgress {
                 None => "unknown".to_string(),
             };
 
+            // Update Prometheus gauge
+            forge_index_telemetry::set_backfill_progress(chain_id, pct);
+
             tracing::info!(
                 chain_id = chain_id,
                 "[chain {}] Backfill {:.1}% complete — {}/{} blocks, {} events, {:.0} blocks/s, ETA {}",

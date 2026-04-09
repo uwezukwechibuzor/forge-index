@@ -1,0 +1,18 @@
+[package]
+name = "forge-index-telemetry"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+forge-index-config = { path = "../forge-index-config" }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+metrics = { workspace = true }
+metrics-exporter-prometheus = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

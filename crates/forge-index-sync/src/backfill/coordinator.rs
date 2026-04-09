@@ -139,9 +139,14 @@ impl BackfillCoordinator {
                 block_cmp.then(a.raw_log.log_index.cmp(&b.raw_log.log_index))
             });
 
-            // Process events through handlers
+            // Process events through handlers and record telemetry
             let events_count = all_events.len() as u64;
             for event in &all_events {
+                forge_index_telemetry::record_event_indexed(
+                    chain_id,
+                    &event.contract_name,
+                    &event.name,
+                );
                 let handler_key = format!("{}:{}", event.contract_name, event.name);
                 if let Some(handler) = self.registry.get(&handler_key) {
                     let _ctx = DbContext::new(
@@ -217,6 +222,11 @@ impl BackfillCoordinator {
 
             self.progress
                 .record(chain_id, blocks_in_range, events_count);
+
+            // Record telemetry for processed blocks
+            for _ in 0..blocks_in_range {
+                forge_index_telemetry::record_block_processed(chain_id);
+            }
         }
 
         Ok(())

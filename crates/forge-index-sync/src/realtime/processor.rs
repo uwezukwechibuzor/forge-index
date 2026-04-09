@@ -194,6 +194,11 @@ impl RealtimeProcessor {
                 .await
                 .map_err(SyncError::Database)?;
 
+            // Update indexer lag metric
+            forge_index_telemetry::record_block_processed(self.chain_id);
+            // Lag = 0 since we just processed the latest block
+            forge_index_telemetry::set_indexer_lag(self.chain_id, 0);
+
             // Periodic finality pruning (every 100 blocks)
             let count = self
                 .blocks_since_prune

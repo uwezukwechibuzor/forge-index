@@ -78,6 +78,7 @@ impl WriteBuffer {
             });
         }
         entry.push(row);
+        forge_index_telemetry::set_buffer_size(table, entry.len());
         Ok(())
     }
 
@@ -116,6 +117,7 @@ impl WriteBuffer {
 
     /// Flushes a single table's buffer to Postgres.
     pub async fn flush_table(&self, table: &str) -> Result<usize, DbError> {
+        let flush_start = std::time::Instant::now();
         let rows = {
             let mut entry = match self.buffers.get_mut(table) {
                 Some(e) => e,
@@ -168,6 +170,10 @@ impl WriteBuffer {
         self.metrics
             .total_flushed
             .fetch_add(count as u64, Ordering::Relaxed);
+
+        // Record telemetry
+        forge_index_telemetry::record_db_flush(flush_start.elapsed());
+        forge_index_telemetry::set_buffer_size(table, 0);
 
         Ok(count)
     }
