@@ -2,3 +2,28 @@
 name = "forge-index-cli"
 version = "0.1.0"
 edition = "2021"
+
+[[bin]]
+name = "forge"
+path = "src/main.rs"
+
+[lib]
+name = "forge_index_cli"
+path = "src/lib.rs"
+
+[dependencies]
+forge-index-core = { path = "../forge-index-core" }
+forge-index-config = { path = "../forge-index-config" }
+clap = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+notify = { workspace = true }
+notify-debouncer-mini = { workspace = true }
+sqlx = { workspace = true }
+forge-index-rpc = { path = "../forge-index-rpc" }
+
+[dev-dependencies]
+tempfile = "3"
