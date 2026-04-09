@@ -52,6 +52,24 @@ pub enum SyncError {
     /// Referenced chain not found in configuration.
     #[error("Chain not found: {0}")]
     ChainNotFound(u64),
+
+    /// A deep reorg exceeded the maximum lookback depth.
+    #[error("Deep reorg on chain {chain_id}: no common ancestor found within {depth} blocks")]
+    DeepReorg {
+        /// The chain where the deep reorg was detected.
+        chain_id: u64,
+        /// The lookback depth that was exhausted.
+        depth: u64,
+    },
+
+    /// WebSocket subscription was lost and reconnection failed.
+    #[error("Subscription lost on chain {chain_id}: {message}")]
+    SubscriptionLost {
+        /// The chain where the subscription was lost.
+        chain_id: u64,
+        /// Details about the failure.
+        message: String,
+    },
 }
 
 impl From<RpcError> for SyncError {
