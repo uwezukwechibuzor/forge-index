@@ -22,3 +22,22 @@ sqlx = { workspace = true }
 tokio = { workspace = true, features = ["test-util"] }
 serde_json = { workspace = true }
 serde_yaml = "0.9"
+wiremock = { workspace = true }
+testcontainers = { workspace = true }
+testcontainers-modules = { workspace = true }
+hex = { workspace = true }
+criterion = { workspace = true }
+dashmap = { workspace = true }
+indexmap = { workspace = true }
+
+[[bench]]
+name = "event_processing"
+harness = false
+
+[[bench]]
+name = "rpc_cache"
+harness = false
+
+[[bench]]
+name = "db_write"
+harness = false
