@@ -14,12 +14,12 @@ use std::sync::Arc;
 
 fn make_test_event(i: u64) -> DecodedEvent {
     let mut params = IndexMap::new();
-    params.insert("from".to_string(), DecodedParam::Address(Address([0x01; 20])));
-    params.insert("to".to_string(), DecodedParam::Address(Address([0x02; 20])));
     params.insert(
-        "value".to_string(),
-        DecodedParam::Uint256(i.to_string()),
+        "from".to_string(),
+        DecodedParam::Address(Address([0x01; 20])),
     );
+    params.insert("to".to_string(), DecodedParam::Address(Address([0x02; 20])));
+    params.insert("value".to_string(), DecodedParam::Uint256(i.to_string()));
 
     let block_hash = Hash32([i as u8; 32]);
     DecodedEvent {

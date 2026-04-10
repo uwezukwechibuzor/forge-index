@@ -114,10 +114,12 @@ pub async fn sql_handler(
             )
             .into_response()
         }
-        Err(SqlError::Timeout) => {
-            ApiResponse::<()>::error(StatusCode::REQUEST_TIMEOUT, "TIMEOUT", "Query execution timed out")
-                .into_response()
-        }
+        Err(SqlError::Timeout) => ApiResponse::<()>::error(
+            StatusCode::REQUEST_TIMEOUT,
+            "TIMEOUT",
+            "Query execution timed out",
+        )
+        .into_response(),
         Err(e) => ApiResponse::<()>::error(
             StatusCode::INTERNAL_SERVER_ERROR,
             "DATABASE_ERROR",

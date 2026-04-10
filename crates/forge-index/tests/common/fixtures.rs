@@ -77,18 +77,16 @@ pub fn make_block_chain(chain_id: u64, number: u64) -> Block {
 pub fn make_transfer_log(block_number: u64, log_index: u32) -> Log {
     let block_hash = make_hash(block_number as u8);
     let tx_hash = make_hash((block_number as u8).wrapping_add(100));
-    let from_topic = Hash32::from("0x0000000000000000000000000000000000000000000000000000000000000001");
-    let to_topic = Hash32::from("0x0000000000000000000000000000000000000000000000000000000000000002");
+    let from_topic =
+        Hash32::from("0x0000000000000000000000000000000000000000000000000000000000000001");
+    let to_topic =
+        Hash32::from("0x0000000000000000000000000000000000000000000000000000000000000002");
 
     Log {
         id: format!("{}-{}", block_hash, log_index),
         chain_id: 1,
         address: Address::from("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"),
-        topics: vec![
-            Hash32::from(TRANSFER_TOPIC),
-            from_topic,
-            to_topic,
-        ],
+        topics: vec![Hash32::from(TRANSFER_TOPIC), from_topic, to_topic],
         data: vec![0u8; 32], // value = 0
         block_number,
         block_hash,

@@ -41,7 +41,10 @@ impl TestDb {
 
         // Run ponder_sync migrations (checkpoints, logs cache, etc.)
         let cache_store = RpcCacheStore::new(pool.clone());
-        cache_store.setup().await.expect("Failed to run cache migrations");
+        cache_store
+            .setup()
+            .await
+            .expect("Failed to run cache migrations");
 
         Self {
             _container: container,
@@ -71,13 +74,11 @@ impl TestDb {
 
     /// Executes a query and returns the first row as JSON.
     pub async fn query_row(&self, sql: &str) -> Option<serde_json::Value> {
-        let row: Option<(serde_json::Value,)> = sqlx::query_as(&format!(
-            "SELECT row_to_json(t) FROM ({}) t LIMIT 1",
-            sql
-        ))
-        .fetch_optional(&self.pool)
-        .await
-        .expect("Failed to query row");
+        let row: Option<(serde_json::Value,)> =
+            sqlx::query_as(&format!("SELECT row_to_json(t) FROM ({}) t LIMIT 1", sql))
+                .fetch_optional(&self.pool)
+                .await
+                .expect("Failed to query row");
         row.map(|(v,)| v)
     }
 

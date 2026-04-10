@@ -56,9 +56,7 @@ impl MockRpc {
         let block_json = fixtures::block_json(block.number);
         Mock::given(method("POST"))
             .and(body_string_contains("eth_getBlockByNumber"))
-            .respond_with(JsonRpcResponder {
-                result: block_json,
-            })
+            .respond_with(JsonRpcResponder { result: block_json })
             .mount(&self.server)
             .await;
     }
@@ -68,9 +66,7 @@ impl MockRpc {
         let logs_json = fixtures::logs_json(logs);
         Mock::given(method("POST"))
             .and(body_string_contains("eth_getLogs"))
-            .respond_with(JsonRpcResponder {
-                result: logs_json,
-            })
+            .respond_with(JsonRpcResponder { result: logs_json })
             .mount(&self.server)
             .await;
     }
@@ -88,6 +84,10 @@ impl MockRpc {
 
     /// Returns how many requests the mock server has received.
     pub async fn request_count(&self) -> usize {
-        self.server.received_requests().await.unwrap_or_default().len()
+        self.server
+            .received_requests()
+            .await
+            .unwrap_or_default()
+            .len()
     }
 }

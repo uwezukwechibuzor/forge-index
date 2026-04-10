@@ -130,5 +130,9 @@ fn test_graphql_bigint_maps_to_string() {
 fn test_graphql_empty_filter() {
     let filter = serde_json::json!({});
     let (sql, _) = filters_to_sql(&filter, "public", "accounts");
-    assert!(sql.is_empty() || sql == "1=1", "Empty filter should produce empty or trivial SQL, got: {}", sql);
+    assert!(
+        sql.is_empty() || sql == "1=1",
+        "Empty filter should produce empty or trivial SQL, got: {}",
+        sql
+    );
 }

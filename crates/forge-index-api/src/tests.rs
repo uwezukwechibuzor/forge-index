@@ -339,7 +339,9 @@ mod sql_parser_tests {
     #[test]
     fn insert_returns_400() {
         let result = validate_sql("INSERT INTO accounts VALUES (1)", "public");
-        assert!(matches!(result, Err(SqlError::InvalidStatement(msg)) if msg.contains("Only SELECT")));
+        assert!(
+            matches!(result, Err(SqlError::InvalidStatement(msg)) if msg.contains("Only SELECT"))
+        );
     }
 
     #[test]
@@ -351,19 +353,25 @@ mod sql_parser_tests {
     #[test]
     fn delete_rejected() {
         let result = validate_sql("DELETE FROM accounts", "public");
-        assert!(matches!(result, Err(SqlError::InvalidStatement(msg)) if msg.contains("Only SELECT")));
+        assert!(
+            matches!(result, Err(SqlError::InvalidStatement(msg)) if msg.contains("Only SELECT"))
+        );
     }
 
     #[test]
     fn update_rejected() {
         let result = validate_sql("UPDATE accounts SET balance = 0", "public");
-        assert!(matches!(result, Err(SqlError::InvalidStatement(msg)) if msg.contains("Only SELECT")));
+        assert!(
+            matches!(result, Err(SqlError::InvalidStatement(msg)) if msg.contains("Only SELECT"))
+        );
     }
 
     #[test]
     fn semicolon_in_middle_returns_400() {
         let result = validate_sql("SELECT 1; SELECT 2", "public");
-        assert!(matches!(result, Err(SqlError::InvalidStatement(msg)) if msg.contains("Multiple statements")));
+        assert!(
+            matches!(result, Err(SqlError::InvalidStatement(msg)) if msg.contains("Multiple statements"))
+        );
     }
 
     #[test]
@@ -469,7 +477,10 @@ mod sql_rate_limiter_tests {
             limiter.try_acquire(ip1);
         }
         assert!(!limiter.try_acquire(ip1));
-        assert!(limiter.try_acquire(ip2), "different IP should still be allowed");
+        assert!(
+            limiter.try_acquire(ip2),
+            "different IP should still be allowed"
+        );
     }
 }
 
@@ -730,7 +741,11 @@ mod sql_integration_tests {
         let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
         let balance = &json["data"]["rows"][0]["balance"];
         // NUMERIC should be serialised as a string
-        assert!(balance.is_string(), "NUMERIC should be a JSON string, got: {:?}", balance);
+        assert!(
+            balance.is_string(),
+            "NUMERIC should be a JSON string, got: {:?}",
+            balance
+        );
         assert_eq!(balance.as_str().unwrap(), "1000");
     }
 
@@ -763,7 +778,11 @@ mod sql_integration_tests {
             .unwrap();
         let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
         let metadata = &json["data"]["rows"][0]["metadata"];
-        assert!(metadata.is_object(), "JSONB should be an embedded JSON object, got: {:?}", metadata);
+        assert!(
+            metadata.is_object(),
+            "JSONB should be an embedded JSON object, got: {:?}",
+            metadata
+        );
         assert_eq!(metadata["name"], "Alice");
     }
 

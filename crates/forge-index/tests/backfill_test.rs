@@ -19,7 +19,9 @@ use forge_index_db::handler::EventHandlerFn;
 use forge_index_db::row::Row;
 use forge_index_db::DbContext;
 use forge_index_rpc::RpcCacheStore;
-use forge_index_sync::{BackfillCoordinator, BackfillProgress, BackfillWorker, FactoryAddressTracker};
+use forge_index_sync::{
+    BackfillCoordinator, BackfillProgress, BackfillWorker, FactoryAddressTracker,
+};
 
 use common::fixtures::{ERC20_ABI, TRANSFER_TOPIC};
 use common::mock_rpc::MockRpc;
@@ -41,9 +43,7 @@ fn test_contract() -> ContractConfig {
         name: "ERC20".to_string(),
         abi_json: ERC20_ABI.to_string(),
         chain_names: vec!["mainnet".to_string()],
-        address: AddressConfig::Single(Address::from(
-            "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-        )),
+        address: AddressConfig::Single(Address::from("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")),
         start_block: 0,
         end_block: None,
         filter: None,
@@ -198,7 +198,11 @@ async fn test_backfill_resumes_from_checkpoint() {
     coordinator.run_chain(1, 100).await.unwrap();
 
     let count = db.count_rows("transfer_events").await;
-    assert_eq!(count, 5, "Should only index events from block 51+, got {}", count);
+    assert_eq!(
+        count, 5,
+        "Should only index events from block 51+, got {}",
+        count
+    );
 }
 
 #[tokio::test]
@@ -224,7 +228,11 @@ async fn test_backfill_write_buffer_flushed_per_chunk() {
     coordinator.run_chain(1, 100).await.unwrap();
 
     let count = db.count_rows("transfer_events").await;
-    assert_eq!(count, 20, "All events should be flushed to DB, got {}", count);
+    assert_eq!(
+        count, 20,
+        "All events should be flushed to DB, got {}",
+        count
+    );
 
     // Checkpoint should be at or past block 100
     let checkpoint = db.get_checkpoint(1, "ERC20").await;

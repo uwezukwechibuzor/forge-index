@@ -18,10 +18,10 @@ pub use handlers::metrics::{
     record_rpc_duration, record_rpc_request, update_backfill_progress, update_buffer_size,
     update_lag,
 };
+pub use handlers::schema_info::SchemaInfoState;
+pub use handlers::sql::{SqlRateLimiter, SqlState};
 pub use response::{ApiErrorBody, ApiResponse};
 pub use server::{install_metrics_recorder, ApiServer};
-pub use handlers::sql::{SqlRateLimiter, SqlState};
-pub use handlers::schema_info::SchemaInfoState;
 
 #[cfg(test)]
 mod tests;

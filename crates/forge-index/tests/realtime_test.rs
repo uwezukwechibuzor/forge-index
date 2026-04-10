@@ -5,8 +5,8 @@
 
 mod common;
 
-use forge_index_sync::{ChainState, FinalityTracker, ReorgDecision, ReorgDetector};
 use forge_index_core::types::Hash32;
+use forge_index_sync::{ChainState, FinalityTracker, ReorgDecision, ReorgDetector};
 
 fn hash(n: u8) -> Hash32 {
     Hash32([n; 32])
@@ -69,7 +69,12 @@ async fn test_reorg_detector_sequential_blocks() {
         };
 
         let decision = detector.process_block(1, &block).await.unwrap();
-        assert_eq!(decision, ReorgDecision::Normal, "Block {} should be normal", i);
+        assert_eq!(
+            decision,
+            ReorgDecision::Normal,
+            "Block {} should be normal",
+            i
+        );
     }
 
     // Verify chain state

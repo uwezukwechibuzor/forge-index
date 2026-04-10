@@ -64,10 +64,8 @@ pub async fn execute_sql(
         .collect();
 
     // Convert rows to JSON
-    let json_rows: Vec<serde_json::Value> = rows
-        .iter()
-        .map(|row| row_to_json(row, &columns))
-        .collect();
+    let json_rows: Vec<serde_json::Value> =
+        rows.iter().map(|row| row_to_json(row, &columns)).collect();
 
     let row_count = json_rows.len();
 

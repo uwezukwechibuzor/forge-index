@@ -43,7 +43,11 @@ async fn test_reorg_detected_by_parent_hash() {
     // Should detect reorg (may error if no RPC client registered, which is expected)
     // The key assertion is that it doesn't return Normal
     match decision {
-        Ok(ReorgDecision::Reorg { chain_id, fork_block, new_tip }) => {
+        Ok(ReorgDecision::Reorg {
+            chain_id,
+            fork_block,
+            new_tip,
+        }) => {
             assert_eq!(chain_id, 1);
             assert_eq!(new_tip, 11);
             assert!(fork_block <= 11);
@@ -105,7 +109,12 @@ async fn test_normal_blocks_extend_chain() {
     for i in 1..=20u64 {
         let block = make_block(i, i as u8, (i - 1) as u8);
         let decision = detector.process_block(1, &block).await.unwrap();
-        assert_eq!(decision, ReorgDecision::Normal, "Block {} should be normal", i);
+        assert_eq!(
+            decision,
+            ReorgDecision::Normal,
+            "Block {} should be normal",
+            i
+        );
     }
 
     // Verify state

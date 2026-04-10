@@ -7,16 +7,7 @@ const MAX_LIMIT: u64 = 1000;
 
 /// Banned keywords that indicate write operations or dangerous access.
 const BANNED_KEYWORDS: &[&str] = &[
-    "INSERT",
-    "UPDATE",
-    "DELETE",
-    "DROP",
-    "CREATE",
-    "ALTER",
-    "TRUNCATE",
-    "GRANT",
-    "REVOKE",
-    "COPY",
+    "INSERT", "UPDATE", "DELETE", "DROP", "CREATE", "ALTER", "TRUNCATE", "GRANT", "REVOKE", "COPY",
     "EXECUTE",
 ];
 
@@ -48,17 +39,11 @@ pub fn validate_sql(sql: &str, pg_schema: &str) -> Result<ValidatedSql, SqlError
 
     // 2. Reject empty queries
     if sql.is_empty() {
-        return Err(SqlError::InvalidStatement(
-            "Empty query".to_string(),
-        ));
+        return Err(SqlError::InvalidStatement("Empty query".to_string()));
     }
 
     // 3. Check first keyword is SELECT
-    let first_word = sql
-        .split_whitespace()
-        .next()
-        .unwrap_or("")
-        .to_uppercase();
+    let first_word = sql.split_whitespace().next().unwrap_or("").to_uppercase();
     if first_word != "SELECT" {
         return Err(SqlError::InvalidStatement(
             "Only SELECT statements are allowed".to_string(),
@@ -206,13 +191,14 @@ fn enforce_limit(sql: &str) -> String {
         // Extract the number after LIMIT
         let after_limit = &sql[limit_pos + 5..].trim_start();
         if let Some(num_str) = after_limit.split_whitespace().next() {
-            if let Ok(n) = num_str.trim_matches(|c: char| !c.is_ascii_digit()).parse::<u64>() {
+            if let Ok(n) = num_str
+                .trim_matches(|c: char| !c.is_ascii_digit())
+                .parse::<u64>()
+            {
                 if n > MAX_LIMIT {
                     // Replace the number with MAX_LIMIT
                     let num_start = sql.len() - sql[limit_pos + 5..].len()
-                        + sql[limit_pos + 5..]
-                            .len()
-                            .saturating_sub(after_limit.len());
+                        + sql[limit_pos + 5..].len().saturating_sub(after_limit.len());
                     let num_end = num_start + num_str.len();
                     return format!("{}{}{}", &sql[..num_start], MAX_LIMIT, &sql[num_end..]);
                 }

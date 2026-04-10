@@ -14,15 +14,9 @@ fn make_row(i: usize) -> Row {
         "address".to_string(),
         ColumnValue::Text(format!("0x{:040x}", i)),
     );
-    map.insert(
-        "balance".to_string(),
-        ColumnValue::BigInt(i as i64 * 1000),
-    );
+    map.insert("balance".to_string(), ColumnValue::BigInt(i as i64 * 1000));
     map.insert("is_active".to_string(), ColumnValue::Boolean(i % 2 == 0));
-    map.insert(
-        "block_number".to_string(),
-        ColumnValue::BigInt(i as i64),
-    );
+    map.insert("block_number".to_string(), ColumnValue::BigInt(i as i64));
     Row {
         columns: map,
         operation: None, // INSERT

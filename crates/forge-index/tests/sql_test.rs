@@ -75,8 +75,7 @@ async fn test_sql_timeout_returns_error() {
     let db = TestDb::new().await;
 
     let validated = validate_sql("SELECT pg_sleep(6)", "public").unwrap();
-    let result =
-        forge_index_api::sql::execute_sql(&db.pool, &validated, Some(100)).await;
+    let result = forge_index_api::sql::execute_sql(&db.pool, &validated, Some(100)).await;
 
     assert!(
         matches!(result, Err(SqlError::Timeout)),

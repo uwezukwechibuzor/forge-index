@@ -198,17 +198,23 @@ mod deployment_tests {
         let path = Path::new(workspace_root()).join("Dockerfile");
         assert!(path.exists(), "Dockerfile should exist at workspace root");
         let content = std::fs::read_to_string(&path).unwrap();
-        assert!(content.contains("FROM rust:"), "should have rust base image");
+        assert!(
+            content.contains("FROM rust:"),
+            "should have rust base image"
+        );
         assert!(content.contains("cargo-chef"), "should use cargo-chef");
         assert!(content.contains("AS planner"), "should have planner stage");
         assert!(content.contains("AS builder"), "should have builder stage");
         assert!(content.contains("AS runtime"), "should have runtime stage");
-        assert!(content.contains("debian:bookworm-slim"), "runtime should use debian slim");
-        assert!(content.contains("forge-index-cli"), "should build forge-index-cli");
         assert!(
-            content.contains("ENTRYPOINT"),
-            "should have an ENTRYPOINT"
+            content.contains("debian:bookworm-slim"),
+            "runtime should use debian slim"
         );
+        assert!(
+            content.contains("forge-index-cli"),
+            "should build forge-index-cli"
+        );
+        assert!(content.contains("ENTRYPOINT"), "should have an ENTRYPOINT");
     }
 
     #[test]
@@ -216,17 +222,26 @@ mod deployment_tests {
         let path = Path::new(workspace_root()).join("docker-compose.yml");
         assert!(path.exists(), "docker-compose.yml should exist");
         let content = std::fs::read_to_string(&path).unwrap();
-        let yaml: serde_json::Value = serde_yaml::from_str(&content)
-            .expect("docker-compose.yml should be valid YAML");
+        let yaml: serde_json::Value =
+            serde_yaml::from_str(&content).expect("docker-compose.yml should be valid YAML");
 
         let services = yaml.get("services").expect("should have services key");
-        assert!(services.get("postgres").is_some(), "should have postgres service");
-        assert!(services.get("indexer").is_some(), "should have indexer service");
+        assert!(
+            services.get("postgres").is_some(),
+            "should have postgres service"
+        );
+        assert!(
+            services.get("indexer").is_some(),
+            "should have indexer service"
+        );
         assert!(
             services.get("prometheus").is_some(),
             "should have prometheus service"
         );
-        assert!(services.get("grafana").is_some(), "should have grafana service");
+        assert!(
+            services.get("grafana").is_some(),
+            "should have grafana service"
+        );
     }
 
     #[test]
@@ -234,8 +249,8 @@ mod deployment_tests {
         let path = Path::new(workspace_root()).join("docker-compose.dev.yml");
         assert!(path.exists(), "docker-compose.dev.yml should exist");
         let content = std::fs::read_to_string(&path).unwrap();
-        let yaml: serde_json::Value = serde_yaml::from_str(&content)
-            .expect("docker-compose.dev.yml should be valid YAML");
+        let yaml: serde_json::Value =
+            serde_yaml::from_str(&content).expect("docker-compose.dev.yml should be valid YAML");
 
         let services = yaml.get("services").expect("should have services key");
         assert!(services.get("postgres").is_some(), "should have postgres");
@@ -282,8 +297,8 @@ mod deployment_tests {
         let path = Path::new(workspace_root()).join("monitoring/prometheus.yml");
         assert!(path.exists(), "prometheus.yml should exist");
         let content = std::fs::read_to_string(&path).unwrap();
-        let yaml: serde_json::Value = serde_yaml::from_str(&content)
-            .expect("prometheus.yml should be valid YAML");
+        let yaml: serde_json::Value =
+            serde_yaml::from_str(&content).expect("prometheus.yml should be valid YAML");
 
         let scrape = yaml
             .get("scrape_configs")
@@ -291,15 +306,16 @@ mod deployment_tests {
         assert!(scrape.is_array(), "scrape_configs should be an array");
         let jobs = scrape.as_array().unwrap();
         assert!(
-            jobs.iter().any(|j| j.get("job_name").and_then(|v| v.as_str()) == Some("forge-index")),
+            jobs.iter()
+                .any(|j| j.get("job_name").and_then(|v| v.as_str()) == Some("forge-index")),
             "should have forge-index job"
         );
     }
 
     #[test]
     fn grafana_dashboard_json_is_valid() {
-        let path = Path::new(workspace_root())
-            .join("monitoring/grafana/dashboards/forge-index.json");
+        let path =
+            Path::new(workspace_root()).join("monitoring/grafana/dashboards/forge-index.json");
         assert!(path.exists(), "forge-index.json dashboard should exist");
         let content = std::fs::read_to_string(&path).unwrap();
         let json: serde_json::Value =
@@ -309,13 +325,14 @@ mod deployment_tests {
         assert_eq!(json["uid"], "forge-index-overview");
 
         let panels = json["panels"].as_array().expect("should have panels");
-        assert!(panels.len() >= 10, "should have at least 10 panels, got {}", panels.len());
+        assert!(
+            panels.len() >= 10,
+            "should have at least 10 panels, got {}",
+            panels.len()
+        );
 
         // Verify key panels exist
-        let titles: Vec<&str> = panels
-            .iter()
-            .filter_map(|p| p["title"].as_str())
-            .collect();
+        let titles: Vec<&str> = panels.iter().filter_map(|p| p["title"].as_str()).collect();
         assert!(titles.iter().any(|t| t.contains("Events Indexed")));
         assert!(titles.iter().any(|t| t.contains("Blocks Processed")));
         assert!(titles.iter().any(|t| t.contains("Indexer Lag")));
@@ -366,9 +383,22 @@ mod deployment_tests {
         let content = std::fs::read_to_string(&path).unwrap();
 
         let targets = [
-            "build:", "build-release:", "test:", "test-integration:", "fmt:", "lint:", "clean:",
-            "docker-build:", "docker-push:", "dev:", "prod:", "down:", "logs:", "migrate:",
-            "codegen:", "bench:",
+            "build:",
+            "build-release:",
+            "test:",
+            "test-integration:",
+            "fmt:",
+            "lint:",
+            "clean:",
+            "docker-build:",
+            "docker-push:",
+            "dev:",
+            "prod:",
+            "down:",
+            "logs:",
+            "migrate:",
+            "codegen:",
+            "bench:",
         ];
 
         for target in &targets {
