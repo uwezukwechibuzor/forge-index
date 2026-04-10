@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::Router;
 use metrics_exporter_prometheus::PrometheusHandle;
 use tokio::sync::watch;
@@ -10,6 +10,8 @@ use tokio::sync::watch;
 use crate::error::ApiError;
 use crate::handlers;
 use crate::handlers::ready::ReadyState;
+use crate::handlers::schema_info::SchemaInfoState;
+use crate::handlers::sql::{SqlRateLimiter, SqlState};
 use crate::middleware;
 
 /// The main HTTP API server.
@@ -20,6 +22,10 @@ pub struct ApiServer {
     ready_rx: watch::Receiver<bool>,
     /// Prometheus metrics handle for rendering.
     metrics_handle: PrometheusHandle,
+    /// Database pool (optional — needed for /sql and /schema).
+    db_pool: Option<sqlx::PgPool>,
+    /// Postgres schema name.
+    pg_schema: String,
 }
 
 impl ApiServer {
@@ -33,7 +39,16 @@ impl ApiServer {
             port,
             ready_rx,
             metrics_handle,
+            db_pool: None,
+            pg_schema: "public".to_string(),
         }
+    }
+
+    /// Sets the database pool for SQL endpoints.
+    pub fn with_db(mut self, pool: sqlx::PgPool, pg_schema: String) -> Self {
+        self.db_pool = Some(pool);
+        self.pg_schema = pg_schema;
+        self
     }
 
     /// Builds the axum Router with all routes and middleware.
@@ -44,7 +59,7 @@ impl ApiServer {
 
         let metrics_handle = self.metrics_handle.clone();
 
-        Router::new()
+        let mut router = Router::new()
             .route("/health", get(handlers::health::health))
             .route(
                 "/ready",
@@ -53,7 +68,46 @@ impl ApiServer {
             .route(
                 "/metrics",
                 get(handlers::metrics::metrics_handler).with_state(metrics_handle),
-            )
+            );
+
+        // Add /sql and /schema routes if a database pool is available
+        if let Some(ref pool) = self.db_pool {
+            let prod_mode = std::env::var("FORGE_ENV")
+                .map(|v| v == "prod")
+                .unwrap_or(false);
+            let api_key = std::env::var("FORGE_API_KEY").ok();
+
+            if prod_mode && api_key.is_none() {
+                tracing::warn!(
+                    "FORGE_ENV=prod but FORGE_API_KEY not set — /sql endpoint will allow unauthenticated access"
+                );
+            }
+
+            let sql_state = SqlState {
+                pool: pool.clone(),
+                pg_schema: self.pg_schema.clone(),
+                rate_limiter: Arc::new(SqlRateLimiter::new(10)),
+                api_key,
+                prod_mode,
+            };
+
+            let schema_state = SchemaInfoState {
+                pool: pool.clone(),
+                pg_schema: self.pg_schema.clone(),
+            };
+
+            router = router
+                .route(
+                    "/sql",
+                    post(handlers::sql::sql_handler).with_state(sql_state),
+                )
+                .route(
+                    "/schema",
+                    get(handlers::schema_info::schema_info_handler).with_state(schema_state),
+                );
+        }
+
+        router
             .layer(axum::middleware::from_fn(
                 middleware::tracing::request_tracing,
             ))

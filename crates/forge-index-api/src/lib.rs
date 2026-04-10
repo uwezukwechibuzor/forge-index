@@ -9,6 +9,7 @@ pub mod handlers;
 pub mod middleware;
 pub mod response;
 pub mod server;
+pub mod sql;
 
 pub use error::ApiError;
 pub use graphql::{GraphqlSchema, GraphqlState};
@@ -19,6 +20,8 @@ pub use handlers::metrics::{
 };
 pub use response::{ApiErrorBody, ApiResponse};
 pub use server::{install_metrics_recorder, ApiServer};
+pub use handlers::sql::{SqlRateLimiter, SqlState};
+pub use handlers::schema_info::SchemaInfoState;
 
 #[cfg(test)]
 mod tests;

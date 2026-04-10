@@ -23,7 +23,7 @@ members = [
 [workspace.dependencies]
 tokio = { version = "1", features = ["full"] }
 alloy = { version = "0.8", features = ["full"] }
-sqlx = { version = "0.8", features = ["postgres", "runtime-tokio", "macros", "migrate"] }
+sqlx = { version = "0.8", features = ["postgres", "runtime-tokio", "macros", "migrate", "bigdecimal"] }
 axum = { version = "0.7" }
 async-graphql = { version = "7" }
 serde = { version = "1", features = ["derive"] }
