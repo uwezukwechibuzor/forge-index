@@ -219,8 +219,9 @@ impl ForgeIndexRunner {
             .and_then(|p| p.parse().ok())
             .unwrap_or(42069);
 
-        let api_server =
-            ApiServer::new(port, ready_rx, metrics_handle).with_db(pool.clone(), pg_schema.clone());
+        let api_server = ApiServer::new(port, ready_rx, metrics_handle)
+            .with_db(pool.clone(), pg_schema.clone())
+            .with_schema(self.schema.clone());
         let api_handle = tokio::spawn(async move {
             if let Err(e) = api_server.run().await {
                 tracing::error!(error = %e, "API server error");

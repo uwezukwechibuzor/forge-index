@@ -22,10 +22,12 @@ pub struct ApiServer {
     ready_rx: watch::Receiver<bool>,
     /// Prometheus metrics handle for rendering.
     metrics_handle: PrometheusHandle,
-    /// Database pool (optional — needed for /sql and /schema).
+    /// Database pool (optional — needed for /sql, /schema, /graphql).
     db_pool: Option<sqlx::PgPool>,
     /// Postgres schema name.
     pg_schema: String,
+    /// User-defined data schema (optional — needed for /graphql).
+    data_schema: Option<forge_index_config::Schema>,
 }
 
 impl ApiServer {
@@ -41,13 +43,20 @@ impl ApiServer {
             metrics_handle,
             db_pool: None,
             pg_schema: "public".to_string(),
+            data_schema: None,
         }
     }
 
-    /// Sets the database pool for SQL endpoints.
+    /// Sets the database pool for SQL and GraphQL endpoints.
     pub fn with_db(mut self, pool: sqlx::PgPool, pg_schema: String) -> Self {
         self.db_pool = Some(pool);
         self.pg_schema = pg_schema;
+        self
+    }
+
+    /// Sets the data schema for GraphQL auto-generation.
+    pub fn with_schema(mut self, schema: forge_index_config::Schema) -> Self {
+        self.data_schema = Some(schema);
         self
     }
 
@@ -105,6 +114,31 @@ impl ApiServer {
                     "/schema",
                     get(handlers::schema_info::schema_info_handler).with_state(schema_state),
                 );
+
+            // Wire GraphQL if a data schema is provided
+            if let Some(ref data_schema) = self.data_schema {
+                match crate::graphql::schema_gen::GraphqlSchema::build(
+                    data_schema,
+                    pool.clone(),
+                    self.pg_schema.clone(),
+                ) {
+                    Ok(gql_schema) => {
+                        let gql_state = crate::graphql::handler::GraphqlState {
+                            schema: std::sync::Arc::new(gql_schema),
+                        };
+                        router = router.route(
+                            "/graphql",
+                            get(crate::graphql::handler::graphql_playground)
+                                .post(crate::graphql::handler::graphql_handler)
+                                .with_state(gql_state),
+                        );
+                        tracing::info!("GraphQL endpoint enabled at /graphql");
+                    }
+                    Err(e) => {
+                        tracing::error!(error = %e, "Failed to build GraphQL schema — /graphql will not be available");
+                    }
+                }
+            }
         }
 
         router
