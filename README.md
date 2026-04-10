@@ -1,4 +1,4 @@
-# forge-index
+# forge-index (WIP)
 
 **The Rust EVM Indexing Framework**
 
