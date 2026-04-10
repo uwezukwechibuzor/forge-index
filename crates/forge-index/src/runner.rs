@@ -135,6 +135,10 @@ impl ForgeIndexRunner {
         // Build RPC clients per chain
         let mut rpc_clients: HashMap<u64, Arc<forge_index_rpc::CachedRpcClient>> = HashMap::new();
         let cache_store = Arc::new(RpcCacheStore::new(pool.clone()));
+        cache_store
+            .setup()
+            .await
+            .map_err(|e| ForgeError::Config(format!("Failed to set up cache store: {}", e)))?;
 
         for chain in &self.config.chains {
             let rpc_client = build_from_config(chain).map_err(|e| ForgeError::Rpc {

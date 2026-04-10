@@ -114,6 +114,21 @@ impl BackfillCoordinator {
 
         // Process ranges sequentially
         for range_idx in 0..max_ranges {
+            // Log progress every range
+            let first_range = plans.iter().find_map(|p| p.ranges.get(range_idx));
+            if let Some(range) = first_range {
+                tracing::info!(
+                    chain_id = chain_id,
+                    range_idx = range_idx,
+                    total_ranges = max_ranges,
+                    from_block = range.from,
+                    to_block = range.to,
+                    "Processing range {}/{}",
+                    range_idx + 1,
+                    max_ranges,
+                );
+            }
+
             let mut all_events: Vec<DecodedEvent> = Vec::new();
 
             for plan in &plans {
